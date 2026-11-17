@@ -108,6 +108,9 @@ test("Home Connect Local: type from the model, door binary sensor, time left in 
   assert.match(html, /40<small> %<\/small>/);
   assert.match(html, /Door closed/);
   assert.match(html, /1 hr 30 min/, "1.5 h left");
+  // The pill says "Running": beside the percentage, the time left; the finish time alone under the bar.
+  assert.match(html, /40<small> %<\/small><\/span><span class="state pill-echo">Running<\/span><span class="state" data-tick="left">1 hr 30 min left<\/span>/);
+  assert.match(html, /<div class="time" data-tick="ends">Ends at [^<·]*<\/div>/);
   assert.match(html, /Salt/i);
   assert.doesNotMatch(html, /Rinse aid/i, "rinse aid full is no alert");
   assert.match(html, /title="Bosch"/);
@@ -255,6 +258,40 @@ test("Home Connect hob: no program, told apart by its event sensors; a zone on s
   const cookEvents = rows("ready").filter(([id]) => id.includes("preheat") || id.includes("alarm"));
   assert.notEqual(hcKindOf(device("home_connect", {}, fav), "a1"), "hob");
   assert.notEqual(hcKindOf(device("home_connect", {}, cookEvents), "a1"), "hob");
+});
+
+test("LG ThinQ hob: one tile per zone, its level out of the max, its timer; cooking while a zone is on", () => {
+  const zone = (slug, label, level, timer) => [
+    [`number.hob_${slug}_power_level`, String(level), { friendly_name: `Hob ${label} power level`, max: 9 }, { translation_key: "power_level_for_location" }],
+    [`sensor.hob_${slug}_current_status`, level ? "cook" : "power_off", { friendly_name: `Hob ${label} current status` },
+      { translation_key: "current_state_for_location" }],
+    [`sensor.hob_${slug}_remaining_time`, timer ? inMinutes(timer) : "unknown", { friendly_name: `Hob ${label} remaining time`, device_class: "timestamp" },
+      { translation_key: "remain_for_location" }],
+  ];
+  // No device-wide state: the first zone's (off) is the operation state, yet the hob cooks.
+  const hob = device("lg_thinq", { name: "Hob", manufacturer: "LGE", model: "CT (DEVICE_COOKTOP)" }, [
+    ...zone("left_front", "Left front", 0), ...zone("right_rear", "Right rear", 6, 20),
+    ["binary_sensor.hob_remote_control", "on", {}, { translation_key: "remote_control_enabled" }],
+  ]);
+  const { html } = render(hob, { kind: "hob" });
+  assert.equal((html.match(/class="zone[ "]/g) || []).length, 2);
+  assert.match(html, /<span class="zn">Left front<\/span><span class="zv">Off<\/span>/);
+  assert.match(html, /<span class="zn">Right rear<\/span><span class="zv">6<small> \/ 9<\/small><\/span>/);
+  assert.match(html, /data-tick="zone"[^>]*>.*20 min left/);
+  assert.match(html, /1 of 2 on/);
+  assert.match(html, /Remote control/);
+  assert.match(html, /class="picture st-run running"|class="banner[^"]*st-run/);
+});
+
+test("Miele hob: its plates are the zones, a plate step read as the level", () => {
+  const hob = device("miele", { name: "Hob", manufacturer: "Miele", model: "Hob" }, [
+    ["sensor.hob", "in_use", { options: ["off", "on", "in_use"] }, { translation_key: "status" }],
+    ["sensor.hob_plate_1", "plate_step_4", { friendly_name: "Hob Plate 1" }, { translation_key: "plate" }],
+    ["sensor.hob_plate_2", "plate_step_0", { friendly_name: "Hob Plate 2" }, { translation_key: "plate" }],
+  ]);
+  const { html } = render(hob, { kind: "hob" });
+  assert.match(html, /<span class="zn">Plate 1<\/span><span class="zv">4<\/span>/);
+  assert.match(html, /<span class="zn">Plate 2<\/span><span class="zv">Off<\/span>/);
 });
 
 test("brands: Home Connect manufacturers, LGE and an unknown maker", () => {
