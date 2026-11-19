@@ -127,6 +127,12 @@ test("Home Connect Local: ready shows the program picker and options, Start pres
   assert.match(html, /data-toggle="switch.bosch_dishwasher_half_load"/);
   assert.doesNotMatch(html, /child_lock|water_hardness/, "appliance settings are not program options");
   assert.doesNotMatch(html, /data-select="select.bosch_dishwasher_power_state"/, "the power select repeats the On/Off button");
+  // More than two power states: no power switch, the select is the only way to set them and stays an option
+  const fridge = device("homeconnect_ws", { manufacturer: "Siemens", model: "Refrigerator" }, [
+    ["sensor.fridge_operation_state", "ready", { options: OP_OPTIONS }, { translation_key: "sensor_operation_state" }],
+    ["select.fridge_power_state", "on", { options: ["standby", "mainsoff", "on", "off"] }, { translation_key: "select_power_state" }],
+  ]);
+  assert.match(render(fridge).html, /data-select="select.fridge_power_state"/);
   assert.match(html, /Door open/);
   card._start();
   await new Promise((r) => setTimeout(r));
