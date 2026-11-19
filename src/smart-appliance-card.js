@@ -3003,8 +3003,9 @@ var HC_PLATFORM_ROLES = {
   },
 };
 var HC_PLATFORMS = Object.keys(HC_PLATFORM_ROLES);
-// Switches of Home Connect Local that are appliance settings, not program options.
-var HC_NOT_OPTIONS = ['switch_child_lock'];
+// Switches and selects of Home Connect Local that are appliance settings, not program options: the child lock, and
+// the power state select, which repeats the power switch the card already shows as its On/Off button.
+var HC_NOT_OPTIONS = ['switch_child_lock', 'select_power_state'];
 // Values of an alert entity (salt, rinse aid, coffee machine tanks) that call for a chip; `full` only on the drip tray.
 var HC_ALERT_ON = ['present', 'confirmed', 'on', 'empty', 'nearly_empty', 'not_inserted'];
 

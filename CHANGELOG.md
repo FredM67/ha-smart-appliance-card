@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.9.1 - 2026-11-19
+
+### Fixes
+- **Home Connect Local**: the power state select (*Power state*) is no longer listed among the program options. It repeats the power switch the card already shows as its On/Off button.
+
 ## 2.9.0 - 2026-11-18
 
 ### Features
